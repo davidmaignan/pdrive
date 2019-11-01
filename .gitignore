@@ -1,9 +1,14 @@
 # configuration
-./pdrive/credentials.json
+pdrive/credentials.json
 *.pickle
 
 # development
 .idea
+venv
+bin
+lib
+lib64
+pyvenv.cfg
 
 # fixtures
 *.pdf
