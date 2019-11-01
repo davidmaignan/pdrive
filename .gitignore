@@ -1,0 +1,12 @@
+# configuration
+./pdrive/credentials.json
+*.pickle
+
+# development
+.idea
+
+# fixtures
+*.pdf
+*.jpg
+*.png
+*.doc
