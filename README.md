@@ -18,3 +18,6 @@ Install dependencies
 ```python
 pip install -r requirements.txt
 ```
+
+You need to create a credentials.json file in the .pdrive folder
+[example](https://developers.google.com/drive/api/v3/quickstart/python)
