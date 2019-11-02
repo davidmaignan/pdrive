@@ -2,14 +2,17 @@ from __future__ import print_function
 
 import os.path
 import pickle
+import json
 
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 
-dirpath = os.getcwd()
+CWD = os.getcwd()
 SCOPES = ['https://www.googleapis.com/auth/drive']
-CLIENT_SECRET_FILE = dirpath + "/.pdrive/credentials.json"
+CLIENT_SECRET_FILE = CWD + "/.pdrive/credentials.json"
+CONFIG_FILE = CWD + "/.pdrive/config.json"
 APPLICATION_NAME = "Drive API Python"
 
 
@@ -35,7 +38,7 @@ class Oauth:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(dirpath + '/.pdrive/credentials.json', SCOPES)
+                flow = InstalledAppFlow.from_client_secrets_file(cwd + '/.pdrive/credentials.json', SCOPES)
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
             with open('token.pickle', 'wb') as token:
@@ -44,22 +47,62 @@ class Oauth:
         return creds
 
 
+def get_files():
+    _files = []
+    for root, dirs, f in os.walk(CWD):
+        for file in f:
+            if "pdf" in file:
+                _files.append(os.path.join(root, file))
+            if "jpg" in file:
+                _files.append(os.path.join(root, file))
 
-def main():
+    _files = [f.replace(CWD + "/", '') for f in _files]
+
+    _result = {
+        'files': [],
+        'dirs': [{'name': CWD, 'id': 'id from config'}]
+    }
+
+    for file in _files:
+        f_name = file.split('/')[-1]
+        dir = file.split('/')[:-1]
+
+        if len(dir) > 0:
+            dir_name = "/".join(dir)
+            _result['dirs'].append({'name': dir_name, 'id': None})
+            _result['files'].append({"name": f_name, 'parent': dir_name})
+        else:
+            _f = {'name': f_name, 'parent': CWD}
+            _result['files'].append(_f)
+
+    return _result
+
+
+def read_config():
+    with open(CONFIG_FILE, 'r') as file:
+        data = file.read()
+
+    return json.loads(data)
+
+
+def upload_files(_files):
     oauth = Oauth(SCOPES, CLIENT_SECRET_FILE, APPLICATION_NAME)
-    creds = oauth.get_credential()
+    cred = oauth.get_credential()
 
-    service = build('drive', 'v3', credentials=creds)
+    service = build('drive', 'v3', credentials=cred)
+    file_metadata = {'name': 'lighthouse.jpg', 'parents': ['11PAmwwAGXpdFItSAp0cTDlmUI3KGpA8z']}
+    media = MediaFileUpload(CWD + '/lighthouse.jpg', mimetype='image/jpeg')
+    file = service.files().create(body=file_metadata,
+                                        media_body=media,
+                                        fields='id').execute()
+    print('File ID: %s' % file.get('id'))
 
-    # file_metadata = {'name': 'lighthouse.jpg'}
-    # media = MediaFileUpload(dirpath + '/lighthouse.jpg', mimetype='image/jpeg')
-    # file = service.files().create(body=file_metadata,
-    #                                     media_body=media,
-    #                                     fields='id').execute()
-    
-    # print('File ID: %s' % file.get('id'))
 
-    # Call the Drive v3 API
+def get_drive_files():
+    oauth = Oauth(SCOPES, CLIENT_SECRET_FILE, APPLICATION_NAME)
+    cred = oauth.get_credential()
+
+    service = build('drive', 'v3', credentials=cred)
     results = service.files().list(pageSize=10, fields="nextPageToken, files(id, name)").execute()
     items = results.get('files', [])
 
@@ -70,8 +113,10 @@ def main():
         for item in items:
             print(u'{0} ({1})'.format(item['name'], item['id']))
 
+def main():
+    config = read_config()
+    files = get_files()
+
 
 if __name__ == '__main__':
     main()
-
-
