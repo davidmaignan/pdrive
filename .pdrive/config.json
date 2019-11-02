@@ -1,7 +1,14 @@
 {
-  "createdAt": "",
-  "updatedAt": "",
-  "folder_id": "",
-  "files": [],
-  "dirs": []
+    "createdAt": "",
+    "updatedAt": "",
+    "root_path": "/home/david/Documents/pdrive",
+    "root_id": "1jSEXC49wYK4DdrOgXxxrxxIHu4bP7QM5",
+    "files": [
+    ],
+    "dirs": [
+        {
+            "name": "/home/david/Documents/pdrive",
+            "id": "1jSEXC49wYK4DdrOgXxxrxxIHu4bP7QM5"
+        }
+    ]
 }
