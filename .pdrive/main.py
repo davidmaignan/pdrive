@@ -64,6 +64,7 @@ def get_files(_config):
     }
 
     for file in _files:
+        file_path = os.path.join(CWD, file)
         f_name = file.split('/')[-1]
         dir = file.split('/')[:-1]
 
@@ -72,7 +73,7 @@ def get_files(_config):
             _result['dirs'].append({'name': dir_name, 'id': None})
             _result['files'].append({"name": f_name, 'path': file,  'parent': dir_name, 'parent_id': None})
         else:
-            _f = {'name': f_name, 'parent': CWD, 'parent_id': _config['root_id']}
+            _f = {'name': f_name, 'path': file_path, 'parent': CWD, 'parent_id': _config['root_id']}
             _result['files'].append(_f)
 
     return _result
@@ -152,7 +153,7 @@ def drive_mkdir_request(name, _parent_id):
 
 def drive_upload_files(_files, _config):
     for file in _files:
-        d = next((item for item in _config['files'] if item["name"] == file['name']), None)
+        d = next((item for item in _config['files'] if item["path"] == file['path']), None)
         if d is None:
             parent = next((item for item in _config['dirs'] if item["name"] == file['parent']), None)
             if parent is not None:
@@ -162,27 +163,19 @@ def drive_upload_files(_files, _config):
 
 
 def upload_files(_file, _parent, _config):
-    file_path = _file['parent'] + "/" + _file['name']
-    if _file['parent'] != _config['root_path']:
-        file_path = _config['root_path'] + "/" + file_path
-
-    print(_file)
-    print(_parent)
-    print("---")
-
     oauth = Oauth(SCOPES, CLIENT_SECRET_FILE, APPLICATION_NAME)
     cred = oauth.get_credential()
     service = build('drive', 'v3', credentials=cred)
     file_metadata = {'name': _file['name'], 'parents': [_parent['id']]}
-    media = MediaFileUpload(file_path, mimetype='image/jpeg')
+    media = MediaFileUpload(_file['path'], mimetype='image/jpeg')
     try:
-        print("Uploading: file %s" % file_path)
+        print("Uploading: file %s" % _file['path'])
         file = service.files().create(body=file_metadata,
                                             media_body=media,
                                             fields='id').execute()
-        _config['files'].append({'name': _file['name'], 'parent':_parent, 'id': file['id']})
+        _config['files'].append({'name': _file['name'], 'path': _file['path'], 'parent':_parent, 'id': file['id']})
     except Exception as e:
-        print("Failed to upload: %s" % file_path)
+        print("Failed to upload: %s" % _file['path'])
         print(e)
 
 
@@ -212,7 +205,7 @@ def main():
     # Save config
     save_config(config)
 
-    print(files_dirs['files'])
+    # print(files_dirs['files'])
 
     # Copy new files
     drive_upload_files(files_dirs['files'], config)
